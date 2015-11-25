@@ -1,0 +1,44 @@
+--- mcc_linux.c~	2015-11-20 17:40:43.820037087 +0300
++++ mcc_linux.c	2015-11-25 17:31:08.832815263 +0300
+@@ -34,6 +34,9 @@
+ #include <linux/sched.h>
+ #include <linux/time.h>
+ #include <linux/mm.h>
++#include <linux/of.h>
++#include <linux/of_irq.h>
++#include <linux/of_address.h>
+ 
+ // common to MQX and Linux
+ // TODO the order of these should not matter
+@@ -173,7 +176,7 @@ static int bad = 0;
+ struct work_struct cpu_to_cpu_work;
+ static irqreturn_t cpu_to_cpu_irq_handler(int irq, void *dev_id)
+ {
+-	int interrupt_id = irq - MVF_INT_CPU_INT0;
++	int interrupt_id = irq_get_irq_data(irq)->hwirq - MVF_INT_CPU_INT0;
+ if(bad) {
+ 	//Clear the interrupt status
+ 	MSCM_WRITE((MSCM_IRCPnIR_INT0_MASK<<interrupt_id), MSCM_IRCPnIR);
+@@ -717,7 +720,7 @@ static struct file_operations mcc_fops =
+  
+ static int __init mcc_init(void) /* Constructor */
+ {
+-	int count, k;
++	int count, k, irq;
+ 	mscm_base = ioremap(MVF_MSCM_BASE_ADDR, 4);
+ 	if (alloc_chrdev_region(&first, 0, 1, "mcc") < 0)
+ 	{
+@@ -764,7 +767,12 @@ static int __init mcc_init(void) /* Cons
+ 	//Register the interrupt handler
+ 	for(count=0; count < MAX_MVF_CPU_TO_CPU_INTERRUPTS; count++)
+ 	{
+-		if (request_irq(MVF_INT_CPU_INT0 + count, cpu_to_cpu_irq_handler, 0, MCC_DRIVER_NAME, mscm_base) != 0)
++		int res, myirq;
++		struct device_node *np;
++
++		np = of_find_node_by_name(NULL, "cpu2cpu");
++		myirq = of_irq_get(np, count);
++		if ((res = devm_request_irq(kobj_to_dev(&c_dev.kobj), myirq, cpu_to_cpu_irq_handler, 0, MCC_DRIVER_NAME, mscm_base)) != 0)
+ 		{
+ 			printk(KERN_ERR "Failed to register MVF CPU TO CPU interrupt:%d\n",count);
+ 
