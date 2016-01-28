@@ -1,0 +1,24 @@
+diff -Naur libmcc-1.05.orig/Makefile libmcc-1.05/Makefile
+--- libmcc-1.05.orig/Makefile	2014-08-14 12:37:31.000000000 -0500
++++ libmcc-1.05/Makefile	2016-01-28 09:40:43.571176653 -0600
+@@ -8,15 +8,14 @@
+ 	$(AR) rcs $@ $<
+ 
+ build/libmcc.so.1.0: build/libmcc.o
+-	$(CC) -shared -o $@  $<
++	$(CC) -shared -fPIC -Wl,-soname,libmcc.so.1.0 -o $@  $<
+ 
+ install:
+ 	mkdir -p $(DESTDIR)/usr/include $(DESTDIR)/usr/lib
+-	cp -f build/libmcc.so.* build/libmcc.a $(DESTDIR)/usr/lib
+-	cp -f include/*.h $(DESTDIR)/usr/include
+-	cd $(DESTDIR)/usr/lib/
+-	ln -sf libmcc.so.1.0 libmcc.so.1
+-	ln -sf libmcc.so.1 libmcc.so
++	cd build && ln -sf libmcc.so.1.0 libmcc.so.1
++	cd build && ln -sf libmcc.so.1 libmcc.so
++	cp -af build/libmcc.so* build/libmcc.a $(DESTDIR)/usr/lib
++	cp -af include/*.h $(DESTDIR)/usr/include
+ 
+ clean:
+ 	rm -rf build
