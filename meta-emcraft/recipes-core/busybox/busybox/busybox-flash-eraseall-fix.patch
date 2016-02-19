@@ -1,0 +1,92 @@
+diff --git a/miscutils/flash_eraseall.c b/miscutils/flash_eraseall.c
+index 0598371..b32b187 100644
+--- a/miscutils/flash_eraseall.c
++++ b/miscutils/flash_eraseall.c
+@@ -20,6 +20,7 @@
+ #include "libbb.h"
+ #include <mtd/mtd-user.h>
+ #include <linux/jffs2.h>
++#include <linux/version.h>
+ 
+ #define OPTION_J  (1 << 0)
+ #define OPTION_Q  (1 << 1)
+@@ -98,34 +99,54 @@ int flash_eraseall_main(int argc UNUSED_PARAM, char **argv)
+ 		else {
+ 			struct nand_oobinfo oobinfo;
+ 
+-			xioctl(fd, MEMGETOOBSEL, &oobinfo);
+-
+-			/* Check for autoplacement */
+-			if (oobinfo.useecc == MTD_NANDECC_AUTOPLACE) {
+-				/* Get the position of the free bytes */
+-				clmpos = oobinfo.oobfree[0][0];
+-				clmlen = oobinfo.oobfree[0][1];
+-				if (clmlen > 8)
+-					clmlen = 8;
+-				if (clmlen == 0)
+-					bb_error_msg_and_die("autoplacement selected and no empty space in oob");
++#ifdef ECCGETLAYOUT
++			if (ioctl(fd, MEMGETOOBSEL, &oobinfo) != 0) {
++#if LINUX_VERSION_CODE <= KERNEL_VERSION(2,6,36)
++				struct nand_ecclayout layout;
++#else
++				struct nand_ecclayout_user layout;
++#endif
++				xioctl(fd, ECCGETLAYOUT, &layout);
++
++				if (!layout.oobfree[0].length)
++					bb_error_msg_and_die("no empty space in oob");
++				clmpos = layout.oobfree[0].offset;
++				clmlen = layout.oobfree[0].length;
+ 			} else {
+-				/* Legacy mode */
+-				switch (meminfo.oobsize) {
+-				case 8:
+-					clmpos = 6;
+-					clmlen = 2;
+-					break;
+-				case 16:
+-					clmpos = 8;
+-					/*clmlen = 8;*/
+-					break;
+-				case 64:
+-					clmpos = 16;
+-					/*clmlen = 8;*/
+-					break;
++#else /* ECCGETLAYOUT */
++				xioctl(fd, MEMGETOOBSEL, &oobinfo);
++#endif /* ECCGETLAYOUT */
++				/* Check for autoplacement */
++				if (oobinfo.useecc == MTD_NANDECC_AUTOPLACE) {
++					/* Get the position of the free bytes */
++					clmpos = oobinfo.oobfree[0][0];
++					clmlen = oobinfo.oobfree[0][1];
++					if (clmlen == 0) {
++						bb_error_msg_and_die(
++							"autoplacement selected and no empty space in oob");
++					}
++				} else {
++					/* Legacy mode */
++					switch (meminfo.oobsize) {
++					case 8:
++						clmpos = 6;
++						clmlen = 2;
++						break;
++					case 16:
++						clmpos = 8;
++						/*clmlen = 8;*/
++						break;
++					case 64:
++						clmpos = 16;
++						/*clmlen = 8;*/
++						break;
++					}
+ 				}
++#ifdef ECCGETLAYOUT
+ 			}
++#endif /* ECCGETLAYOUT */
++			if (clmlen > 8)
++				clmlen = 8;
+ 			cleanmarker.totlen = cpu_to_je32(8);
+ 		}
+ 

@@ -1,0 +1,225 @@
+diff --git a/lib/c_glib/test/Makefile.am b/lib/c_glib/test/Makefile.am
+index 7319743..ed4b549 100755
+--- a/lib/c_glib/test/Makefile.am
++++ b/lib/c_glib/test/Makefile.am
+@@ -196,7 +196,7 @@ nodist_libtestgencpp_la_SOURCES = \
+         gen-cpp/ThriftTest_types.h
+ libtestgencpp_la_CPPFLAGS = -I../../cpp/src $(BOOST_CPPFLAGS) -I./gen-cpp
+ 
+-THRIFT = $(top_builddir)/compiler/cpp/thrift
++THRIFT = thrift
+ 
+ gen-c_glib/t_test_container_test_types.c gen-c_glib/t_test_container_test_types.h gen-c_glib/t_test_container_service.c gen-c_glib/t_test_container_service.h: ContainerTest.thrift
+ 	$(THRIFT) --gen c_glib $<
+diff --git a/lib/cpp/test/Makefile.am b/lib/cpp/test/Makefile.am
+index 44b94a7..e6e8574 100755
+--- a/lib/cpp/test/Makefile.am
++++ b/lib/cpp/test/Makefile.am
+@@ -329,7 +329,7 @@ OpenSSLManualInitTest_LDADD = \
+ #
+ # Common thrift code generation rules
+ #
+-THRIFT = $(top_builddir)/compiler/cpp/thrift
++THRIFT = thrift
+ 
+ gen-cpp/DebugProtoTest_types.cpp gen-cpp/DebugProtoTest_types.h gen-cpp/EmptyService.cpp gen-cpp/EmptyService.h: $(top_srcdir)/test/DebugProtoTest.thrift
+ 	$(THRIFT) --gen cpp $<
+diff --git a/tutorial/Makefile.am b/tutorial/Makefile.am
+index 47711a9..6da6a2b 100755
+--- a/tutorial/Makefile.am
++++ b/tutorial/Makefile.am
+@@ -66,7 +66,7 @@ endif
+ # generate html for ThriftTest.thrift
+ #
+ all-local:
+-	$(top_builddir)/compiler/cpp/thrift --gen html -r $(top_srcdir)/tutorial/tutorial.thrift
++	thrift --gen html -r $(top_srcdir)/tutorial/tutorial.thrift
+ 
+ clean-local:
+ 	rm -rf $(top_srcdir)/tutorial/gen-html
+diff --git a/tutorial/as3/build.xml b/tutorial/as3/build.xml
+index f7ed32d..cba6b49 100644
+--- a/tutorial/as3/build.xml
++++ b/tutorial/as3/build.xml
+@@ -34,10 +34,10 @@
+ 
+   <target name="generate">
+     <!-- Generate the thrift gen-java source -->
+-    <exec executable="../../compiler/cpp/thrift" failonerror="true">
++    <exec executable="thrift" failonerror="true">
+       <arg line="--gen as3 ../shared.thrift"/>
+     </exec>
+-    <exec executable="../../compiler/cpp/thrift" failonerror="true">
++    <exec executable="thrift" failonerror="true">
+       <arg line="--gen as3 ../tutorial.thrift"/>
+     </exec>
+   </target>
+diff --git a/tutorial/c_glib/Makefile.am b/tutorial/c_glib/Makefile.am
+index 565f635..3c579cd 100755
+--- a/tutorial/c_glib/Makefile.am
++++ b/tutorial/c_glib/Makefile.am
+@@ -28,7 +28,7 @@ AM_CFLAGS = -g -Wall -Wextra -pedantic $(GLIB_CFLAGS) $(GOBJECT_CFLAGS) @GCOV_CF
+ AM_CPPFLAGS = -I$(top_srcdir)/lib/c_glib/src -Igen-c_glib
+ AM_LDFLAGS = $(GLIB_LIBS) $(GOBJECT_LIBS) @GCOV_LDFLAGS@
+ 
+-THRIFT = $(top_builddir)/compiler/cpp/thrift
++THRIFT = thrift
+ 
+ noinst_LTLIBRARIES = \
+ 	libtutorialgencglib.la
+diff --git a/tutorial/cpp/Makefile.am b/tutorial/cpp/Makefile.am
+index d8a9dbc..fd4721f 100755
+--- a/tutorial/cpp/Makefile.am
++++ b/tutorial/cpp/Makefile.am
+@@ -61,7 +61,7 @@ TutorialClient_LDADD = \
+ #
+ # Common thrift code generation rules
+ #
+-THRIFT = $(top_builddir)/compiler/cpp/thrift
++THRIFT = thrift
+ 
+ gen-cpp/Calculator.cpp gen-cpp/SharedService.cpp gen-cpp/shared_constants.cpp gen-cpp/shared_types.cpp gen-cpp/tutorial_constants.cpp gen-cpp/tutorial_types.cpp: $(top_srcdir)/tutorial/tutorial.thrift
+ 	$(THRIFT) --gen cpp -r $<
+diff --git a/tutorial/erl/server.sh b/tutorial/erl/server.sh
+index 775afb6..c63d43f 100755
+--- a/tutorial/erl/server.sh
++++ b/tutorial/erl/server.sh
+@@ -27,7 +27,7 @@ if ! [ -d ${ERL_THRIFT}/ebin ]; then
+ fi
+ 
+ if ! [ -d gen-erl ]; then
+-  ../../compiler/cpp/thrift -r --gen erl ../tutorial.thrift
++  thrift -r --gen erl ../tutorial.thrift
+ fi
+ 
+ 
+diff --git a/tutorial/go/Makefile.am b/tutorial/go/Makefile.am
+index a707d5d..0cd528b 100644
+--- a/tutorial/go/Makefile.am
++++ b/tutorial/go/Makefile.am
+@@ -17,7 +17,7 @@
+ # under the License.
+ #
+ 
+-THRIFT = $(top_builddir)/compiler/cpp/thrift
++THRIFT = thrift
+ 
+ gen-go/tutorial/calculator.go gen-go/shared/shared_service.go: $(top_srcdir)/tutorial/tutorial.thrift
+ 	$(THRIFT) --gen go -r $<
+diff --git a/tutorial/haxe/Makefile.am b/tutorial/haxe/Makefile.am
+index c3c5204..57454a6 100644
+--- a/tutorial/haxe/Makefile.am
++++ b/tutorial/haxe/Makefile.am
+@@ -17,7 +17,7 @@
+ # under the License.
+ #
+ 
+-THRIFT = $(top_builddir)/compiler/cpp/thrift
++THRIFT = thrift
+ 
+ gen-haxe/tutorial/calculator.hx gen-haxe/shared/shared_service.hx: $(top_srcdir)/tutorial/tutorial.thrift
+ 	$(THRIFT) --gen haxe -r $<
+diff --git a/tutorial/hs/Makefile.am b/tutorial/hs/Makefile.am
+index f274eb6..410ffe4 100755
+--- a/tutorial/hs/Makefile.am
++++ b/tutorial/hs/Makefile.am
+@@ -18,7 +18,7 @@
+ #
+ 
+ all-local:
+-	$(top_builddir)/compiler/cpp/thrift --gen hs -r $(top_srcdir)/tutorial/tutorial.thrift
++	thrift --gen hs -r $(top_srcdir)/tutorial/tutorial.thrift
+ 	$(CABAL) install
+ 
+ install-exec-hook:
+diff --git a/tutorial/java/build.xml b/tutorial/java/build.xml
+index 7638d5b..6e356b4 100644
+--- a/tutorial/java/build.xml
++++ b/tutorial/java/build.xml
+@@ -80,7 +80,7 @@
+ 
+   <target name="generate">
+     <!-- Generate the thrift gen-java source -->
+-    <exec executable="../../compiler/cpp/thrift" failonerror="true">
++    <exec executable="thrift" failonerror="true">
+       <arg line="--gen java -r  ../tutorial.thrift"/>
+     </exec>
+   </target>
+diff --git a/tutorial/js/build.xml b/tutorial/js/build.xml
+index a9a9ad4..8394737 100644
+--- a/tutorial/js/build.xml
++++ b/tutorial/js/build.xml
+@@ -76,7 +76,7 @@
+   </target>
+ 
+   <target name="generate">
+-    <exec executable="../../compiler/cpp/thrift" failonerror="true">
++    <exec executable="thrift" failonerror="true">
+       <arg line="--gen js -r  ../tutorial.thrift"/>
+     </exec>
+   </target>
+diff --git a/tutorial/nodejs/Makefile.am b/tutorial/nodejs/Makefile.am
+index ecf3b2b..d034921 100644
+--- a/tutorial/nodejs/Makefile.am
++++ b/tutorial/nodejs/Makefile.am
+@@ -17,7 +17,7 @@
+ # under the License.
+ #
+ 
+-THRIFT = $(top_builddir)/compiler/cpp/thrift
++THRIFT = thrift
+ 
+ gen-nodejs/Calculator.js gen-nodejs/SharedService.js: $(top_srcdir)/tutorial/tutorial.thrift
+ 	$(THRIFT) --gen js:node -r $<
+diff --git a/tutorial/py.tornado/Makefile.am b/tutorial/py.tornado/Makefile.am
+index 6ac6023..970ff6d 100755
+--- a/tutorial/py.tornado/Makefile.am
++++ b/tutorial/py.tornado/Makefile.am
+@@ -17,7 +17,7 @@
+ # under the License.
+ #
+ 
+-THRIFT = $(top_builddir)/compiler/cpp/thrift
++THRIFT = thrift
+ 
+ gen-py.tornado/tutorial/Calculator.py gen-py.tornado/shared/SharedService.py: $(top_srcdir)/tutorial/tutorial.thrift
+ 	$(THRIFT) --gen py:tornado -r $<
+diff --git a/tutorial/py.twisted/Makefile.am b/tutorial/py.twisted/Makefile.am
+index c6cbd45..1afea0b 100755
+--- a/tutorial/py.twisted/Makefile.am
++++ b/tutorial/py.twisted/Makefile.am
+@@ -17,7 +17,7 @@
+ # under the License.
+ #
+ 
+-THRIFT = $(top_builddir)/compiler/cpp/thrift
++THRIFT = thrift
+ 
+ gen-py/tutorial/Calculator.py gen-py/shared/SharedService.py: $(top_srcdir)/tutorial/tutorial.thrift
+ 	$(THRIFT) --gen py:twisted -r $<
+diff --git a/tutorial/py/Makefile.am b/tutorial/py/Makefile.am
+index 2397a12..df42a1c 100755
+--- a/tutorial/py/Makefile.am
++++ b/tutorial/py/Makefile.am
+@@ -17,7 +17,7 @@
+ # under the License.
+ #
+ 
+-THRIFT = $(top_builddir)/compiler/cpp/thrift
++THRIFT = thrift
+ 
+ gen-py/tutorial/Calculator.py gen-py/shared/SharedService.py: $(top_srcdir)/tutorial/tutorial.thrift
+ 	$(THRIFT) --gen py -r $<
+diff --git a/tutorial/rb/Makefile.am b/tutorial/rb/Makefile.am
+index 369e903..fd0cd46 100755
+--- a/tutorial/rb/Makefile.am
++++ b/tutorial/rb/Makefile.am
+@@ -17,7 +17,7 @@
+ # under the License.
+ #
+ 
+-THRIFT = $(top_builddir)/compiler/cpp/thrift
++THRIFT = thrift
+ 
+ gen-py/calculator.rb gen-py/shared_service.rb: $(top_srcdir)/tutorial/tutorial.thrift
+ 	$(THRIFT) --gen rb -r $<

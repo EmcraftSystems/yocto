@@ -1,0 +1,5 @@
+#!/bin/sh
+export QWS_MOUSE_PROTO="IntelliMouse:/dev/input/mice"
+export QWS_KEYBOARD=""
+cd /qtquick
+./dynamiclist -qws
