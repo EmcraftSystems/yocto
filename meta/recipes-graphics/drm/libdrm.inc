@@ -39,3 +39,8 @@ FILES_${PN}-intel = "${libdir}/libdrm_intel.so.*"
 FILES_${PN}-exynos = "${libdir}/libdrm_exynos.so.*"
 FILES_${PN}-kms = "${libdir}/libkms*.so.*"
 FILES_${PN}-freedreno = "${libdir}/libdrm_freedreno.so.*"
+
+do_install_append() {
+	cp -v ${D}${includedir}/libdrm/drm.h ${D}${includedir}/
+	cp -v ${D}${includedir}/libdrm/drm_mode.h ${D}${includedir}/
+}

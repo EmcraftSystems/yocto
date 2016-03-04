@@ -35,10 +35,12 @@ EXTRA_OECONF = "\
   --enable-freetype=yes \
   --enable-zlib \
   --disable-imlib2 \
-  --disable-mesa \
-  --disable-sdl \
   --disable-vnc \
   --disable-x11 \
+  --disable-egl \
+  --enable-idirectfbgl-egl \
+  --enable-mesa \
+  --enable-sdl \
 "
 
 #Once -fno-omit-frame-pointer option of gcc is added into TARGET_CLFAGS as default
@@ -66,6 +68,7 @@ FILES_${PN}-dev += "\
   ${libdir}/directfb-${RV}/systems/*.la \
   ${libdir}/directfb-${RV}/inputdrivers/*.la \
   ${libdir}/directfb-${RV}/interfaces/*/*.la \
+  ${libdir}/directfb-${RV}/gfxdrivers/*.la \
   ${libdir}/directfb-${RV}/wm/*.la \
 "
 
@@ -73,6 +76,7 @@ FILES_${PN} += "\
   ${libdir}/directfb-${RV}/systems/*.so \
   ${libdir}/directfb-${RV}/inputdrivers/*.so \
   ${libdir}/directfb-${RV}/interfaces/*/*.so \
+  ${libdir}/directfb-${RV}/gfxdrivers/*.so \
   ${libdir}/directfb-${RV}/wm/*.so \
   ${datadir}/directfb-${PV} \
 "
