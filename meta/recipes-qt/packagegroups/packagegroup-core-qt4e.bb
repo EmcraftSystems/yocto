@@ -44,6 +44,7 @@ RDEPENDS_${PN} = " \
         qt4-embedded-examples \
         qt-demo-init \
         qt4-embedded-assistant \
+        qt4serialport \
 "
 
 RRECOMMENDS_${PN} = " \
