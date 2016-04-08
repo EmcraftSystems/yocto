@@ -34,4 +34,5 @@ RDEPENDS_${PN} += " \
         libsqlite3-dev \
         expat-dev \
         qt4serialport-dev \
+        maliit-framework-dev \
         "

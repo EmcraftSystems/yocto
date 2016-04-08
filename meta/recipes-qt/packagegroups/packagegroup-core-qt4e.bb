@@ -45,6 +45,7 @@ RDEPENDS_${PN} = " \
         qt-demo-init \
         qt4-embedded-assistant \
         qt4serialport \
+        maliit-framework \
 "
 
 RRECOMMENDS_${PN} = " \
