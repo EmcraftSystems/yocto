@@ -1,0 +1,84 @@
+--- ../fbset.c_orig	2016-04-28 14:20:39.849889379 +0300
++++ ../fbset.c	2016-04-28 14:28:12.171388523 +0300
+@@ -28,6 +28,8 @@
+ #include <sys/ioctl.h>
+ #include <ctype.h>
+ #include <sys/stat.h>
++#include <sys/mman.h>
++#include <linux/fb.h>
+ 
+ struct file;
+ struct inode;
+@@ -51,6 +53,9 @@
+ #define DEFAULT_MODEDBFILE	"/etc/fb.modes"
+ 
+ 
++/* Non-standard framebuffer mode */
++#define NONSTD_UYVY_FLAG	1
++
+     /*
+      *  Command Line Options
+      */
+@@ -217,6 +222,7 @@
+ void CloseFrameBuffer(int fh);
+ void GetVarScreenInfo(int fh, struct fb_var_screeninfo *var);
+ void SetVarScreenInfo(int fh, struct fb_var_screeninfo *var);
++void ApplySettings(int fh);
+ void GetFixScreenInfo(int fh, struct fb_fix_screeninfo *fix);
+ static void ConvertFromVideoMode(const struct VideoMode *vmode,
+ 				 struct fb_var_screeninfo *var);
+@@ -260,7 +266,7 @@
+     if (Opt_verbose)
+ 	printf("Opening frame buffer device `%s'\n", name);
+ 
+-    if ((fh = open(name, O_RDONLY)) == -1)
++    if ((fh = open(name, O_RDWR)) == -1)
+ 	Die("open %s: %s\n", name, strerror(errno));
+     return fh;
+ }
+@@ -296,6 +302,37 @@
+ 	Die("ioctl FBIOPUT_VSCREENINFO: %s\n", strerror(errno));
+ }
+ 
++void ApplySettings(int fh)
++{
++    void *mem = NULL;
++    struct fb_var_screeninfo var;
++
++    /* re-read settings */
++    GetVarScreenInfo(fh, &var);
++
++    ioctl(fh, FBIOBLANK, 4);
++
++    int len = var.xres * var.yres * var.bits_per_pixel / 8;
++
++    mem = mmap(NULL, len, PROT_WRITE|PROT_READ, MAP_SHARED, fh, 0);
++    if (mem != MAP_FAILED) {
++	if (var.nonstd & NONSTD_UYVY_FLAG) {
++	    char black_yuv[2] = { 0x80, 0x00 };
++	    int i;
++	    /* fill yuv422 black */
++	    for (i = 0; i < len/2; ++i) {
++		memcpy(mem + i * 2, black_yuv, 2);
++	    }
++	} else {
++	    /* fill rgb black */
++	    memset(mem, 0x0, len);
++	}
++	munmap(mem, len);
++    } else {
++	perror("Mmap failed");
++    }
++    ioctl(fh, FBIOBLANK, 0);
++}
+ 
+     /*
+      *  Get the Fixed Part of the Screen Info
+@@ -1028,6 +1065,7 @@
+ 	    printf("Setting video mode to `%s'\n", Opt_fb);
+ 	SetVarScreenInfo(fh, &var);
+ 	ConvertToVideoMode(&var, &Current);
++	ApplySettings(fh);
+     }
+ 
+     /*
