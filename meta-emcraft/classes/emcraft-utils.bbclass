@@ -15,5 +15,7 @@ def get_yocto_rev(d):
                                 data = 'M'
                         else:
                                 data = ''
-                        return data + base_get_metadata_git_revision(l, None)
-        return 'None'
+                        lrev = base_get_metadata_git_revision(l, None)
+                        if lrev != "<unknown>":
+                                return data + base_get_metadata_git_revision(l, None)
+        return '0000'
