@@ -25,7 +25,7 @@ SRC_URI = "${LINUX_GIT_REPO} \
 KERNEL_EXTRA_ARGS += "LOADADDR=0x80008000"
 
 do_subst_cfg() {
-	cp -a ${WORKDIR}/${MACHINE}.dts ${WORKDIR}/git/arch/arm/boot/dts
+	cp -a ${WORKDIR}/${MACHINE}.dts ${S}/arch/arm/boot/dts
 }
 
 addtask subst_cfg after do_unpack before do_patch
