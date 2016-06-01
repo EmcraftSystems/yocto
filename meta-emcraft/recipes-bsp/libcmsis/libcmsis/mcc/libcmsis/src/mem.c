@@ -171,7 +171,7 @@ void *cmsis_mem_alloc(size_t size)
 	/*
 	 * Map memory allocated to user
 	 */
-	dsc = mmap(NULL, phys_size, PROT_READ | PROT_WRITE, MAP_SHARED,
+	dsc = mmap(NULL, phys_size, PROT_READ | PROT_WRITE | PROT_EXEC, MAP_SHARED,
 		   cmsis_mem_fd, areq.mmap_offset);
 	if (dsc == MAP_FAILED) {
 		dbg(0, "%s: failed map mem of %d(%d)\n", CMSIS_MEM,
