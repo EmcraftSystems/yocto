@@ -98,15 +98,15 @@ IMAGE_TYPEDEP_elf = "cpio.gz"
 UBI_VOLNAME ?= "${MACHINE}-rootfs"
 
 IMAGE_CMD_ubi () {
-	echo \[ubifs\] > ubinize.cfg 
-	echo mode=ubi >> ubinize.cfg
-	echo image=${DEPLOY_DIR_IMAGE}/${IMAGE_NAME}.rootfs.ubifs >> ubinize.cfg 
-	echo vol_id=0 >> ubinize.cfg 
-	echo vol_type=dynamic >> ubinize.cfg 
-	echo vol_name=${UBI_VOLNAME} >> ubinize.cfg 
-	echo vol_flags=autoresize >> ubinize.cfg
+	echo \[ubifs\] > ubinize-${IMAGE_NAME}.cfg
+	echo mode=ubi >> ubinize-${IMAGE_NAME}.cfg
+	echo image=${DEPLOY_DIR_IMAGE}/${IMAGE_NAME}.rootfs.ubifs >> ubinize-${IMAGE_NAME}.cfg
+	echo vol_id=0 >> ubinize-${IMAGE_NAME}.cfg
+	echo vol_type=dynamic >> ubinize-${IMAGE_NAME}.cfg
+	echo vol_name=${UBI_VOLNAME} >> ubinize-${IMAGE_NAME}.cfg
+	echo vol_flags=autoresize >> ubinize-${IMAGE_NAME}.cfg
 	mkfs.ubifs -F -r ${IMAGE_ROOTFS} -o ${DEPLOY_DIR_IMAGE}/${IMAGE_NAME}.rootfs.ubifs ${MKUBIFS_ARGS}
-	ubinize -o ${DEPLOY_DIR_IMAGE}/${IMAGE_NAME}.rootfs.ubi ${UBINIZE_ARGS} ubinize.cfg
+	ubinize -o ${DEPLOY_DIR_IMAGE}/${IMAGE_NAME}.rootfs.ubi ${UBINIZE_ARGS} ubinize-${IMAGE_NAME}.cfg
 }
 IMAGE_TYPEDEP_ubi = "ubifs"
 
