@@ -139,6 +139,7 @@ IMAGE_INSTALL += "\
 	      expect			\
 	      minicom			\
 	      i2c-tools			\
+	      lcdtest			\
 	      "
 
 export IMAGE_BASENAME = "core-image-qte-sdk"
