@@ -1,0 +1,406 @@
+diff -rpu qt-everywhere-opensource-src-4.8.6.orig/src/gui/embedded/qmouse_qws.cpp qt-everywhere-opensource-src-4.8.6/src/gui/embedded/qmouse_qws.cpp
+--- qt-everywhere-opensource-src-4.8.6.orig/src/gui/embedded/qmouse_qws.cpp	2016-08-02 14:22:02.088049951 +0300
++++ qt-everywhere-opensource-src-4.8.6/src/gui/embedded/qmouse_qws.cpp	2016-08-02 14:27:06.712804658 +0300
+@@ -256,10 +256,10 @@ void QWSMouseHandler::setScreen(const QS
+ 
+     \sa pos()
+ */
+-void QWSMouseHandler::mouseChanged(const QPoint &position, int state, int wheel)
++void QWSMouseHandler::mouseChanged(const QPoint &position, int state, int wheel, int slot, int pressure)
+ {
+     mousePos = position + d_ptr->screen->offset();
+-    QWSServer::sendMouseEvent(mousePos, state, wheel);
++    QWSServer::sendMouseEvent(mousePos, state, wheel, slot, pressure);
+ }
+ 
+ /*!
+diff -rpu qt-everywhere-opensource-src-4.8.6.orig/src/gui/embedded/qmouse_qws.h qt-everywhere-opensource-src-4.8.6/src/gui/embedded/qmouse_qws.h
+--- qt-everywhere-opensource-src-4.8.6.orig/src/gui/embedded/qmouse_qws.h	2016-08-02 14:22:02.201048748 +0300
++++ qt-everywhere-opensource-src-4.8.6/src/gui/embedded/qmouse_qws.h	2016-08-02 14:27:10.336766051 +0300
+@@ -78,7 +78,7 @@ public:
+     virtual void suspend() = 0;
+ 
+     void limitToScreen(QPoint &pt);
+-    void mouseChanged(const QPoint& pos, int bstate, int wheel = 0);
++    void mouseChanged(const QPoint& pos, int bstate, int wheel = 0, int slot = 0, int pressure = 1);
+     const QPoint &pos() const { return mousePos; }
+ 
+     void setScreen(const QScreen *screen);
+diff -rpu qt-everywhere-opensource-src-4.8.6.orig/src/gui/embedded/qmousetslib_qws.cpp qt-everywhere-opensource-src-4.8.6/src/gui/embedded/qmousetslib_qws.cpp
+--- qt-everywhere-opensource-src-4.8.6.orig/src/gui/embedded/qmousetslib_qws.cpp	2016-08-02 14:22:02.201048748 +0300
++++ qt-everywhere-opensource-src-4.8.6/src/gui/embedded/qmousetslib_qws.cpp	2016-08-02 15:17:47.511250655 +0300
+@@ -237,12 +237,14 @@ void QWSTslibMouseHandlerPrivate::readMo
+             return;
+         pressed = (sample.pressure > 0);
+ 
++	#if 0
+         // Only return last sample unless there's a press/release event.
+         while (pressed == wasPressed) {
+             if (!get_sample(&sample))
+                 break;
+             pressed = (sample.pressure > 0);
+         }
++	#endif
+ 
+         // work around missing coordinates on mouse release in raw mode
+         if (!calibrated && !pressed && sample.x == 0 && sample.y == 0) {
+@@ -285,7 +287,7 @@ void QWSTslibMouseHandlerPrivate::readMo
+         if (calibrated) {
+             // tslib should do all the translation and filtering, so we send a
+             // "raw" mouse event
+-            handler->QWSMouseHandler::mouseChanged(p, pressed);
++            handler->QWSMouseHandler::mouseChanged(p, pressed, 0, sample.slot, sample.pressure);
+         } else {
+             handler->sendFiltered(p, pressed);
+         }
+diff -rpu qt-everywhere-opensource-src-4.8.6.orig/src/gui/embedded/qwindowsystem_p.h qt-everywhere-opensource-src-4.8.6/src/gui/embedded/qwindowsystem_p.h
+--- qt-everywhere-opensource-src-4.8.6.orig/src/gui/embedded/qwindowsystem_p.h	2016-08-02 14:22:02.088049951 +0300
++++ qt-everywhere-opensource-src-4.8.6/src/gui/embedded/qwindowsystem_p.h	2016-08-02 14:27:36.800483991 +0300
+@@ -141,7 +141,7 @@ private:
+     // not in ifndef as this results in more readable functions.
+     static void sendKeyEventUnfiltered(int unicode, int keycode, Qt::KeyboardModifiers modifiers,
+                                        bool isPress, bool autoRepeat);
+-    static void sendMouseEventUnfiltered(const QPoint &pos, int state, int wheel = 0);
++    static void sendMouseEventUnfiltered(const QPoint &pos, int state, int wheel = 0, int slot = 0, int pressure = 1);
+     static void emergency_cleanup();
+ 
+     static QBrush *bgBrush;
+diff -rpu qt-everywhere-opensource-src-4.8.6.orig/src/gui/embedded/qwindowsystem_qws.cpp qt-everywhere-opensource-src-4.8.6/src/gui/embedded/qwindowsystem_qws.cpp
+--- qt-everywhere-opensource-src-4.8.6.orig/src/gui/embedded/qwindowsystem_qws.cpp	2016-08-02 14:22:02.088049951 +0300
++++ qt-everywhere-opensource-src-4.8.6/src/gui/embedded/qwindowsystem_qws.cpp	2016-08-02 14:27:56.817270625 +0300
+@@ -2213,7 +2213,7 @@ extern int *qt_last_x,*qt_last_y;
+ 
+   \a pos is in device coordinates
+ */
+-void QWSServer::sendMouseEvent(const QPoint& pos, int state, int wheel)
++void QWSServer::sendMouseEvent(const QPoint& pos, int state, int wheel, int slot, int pressure)
+ {
+     bool block = qwsServerPrivate->screensaverblockevent(MOUSE, qwsServerPrivate->screensaverinterval, state);
+ #ifdef EVENT_BLOCK_DEBUG
+@@ -2242,6 +2242,9 @@ void QWSServer::sendMouseEvent(const QPo
+     QWSServer::mousePosition = tpos;
+     qwsServerPrivate->mouseState = state;
+ 
++    QWSServerPrivate::sendMouseEventUnfiltered(tpos, state, wheel, slot, pressure);
++    return;
++
+ #ifndef QT_NO_QWS_INPUTMETHODS
+     const int btnMask = Qt::LeftButton | Qt::RightButton | Qt::MidButton;
+     int stroke_count; // number of strokes to keep shown.
+@@ -2255,7 +2258,7 @@ void QWSServer::sendMouseEvent(const QPo
+     if (stroke_count == 0) {
+ 	if (state&btnMask)
+ 	    force_reject_strokeIM = true;
+-        QWSServerPrivate::sendMouseEventUnfiltered(tpos, state, wheel);
++        QWSServerPrivate::sendMouseEventUnfiltered(tpos, state, wheel, slot, pressure);
+     }
+     // stop force reject after stroke ends.
+     if (state&btnMask && force_reject_strokeIM)
+@@ -2263,11 +2266,11 @@ void QWSServer::sendMouseEvent(const QPo
+     // on end of stroke, force_rejct
+     // and once a stroke is rejected, do not try again till pen is lifted
+ #else
+-    QWSServerPrivate::sendMouseEventUnfiltered(tpos, state, wheel);
++    QWSServerPrivate::sendMouseEventUnfiltered(tpos, state, wheel, slot, pressure);
+ #endif // end QT_NO_QWS_FSIM
+ }
+ 
+-void QWSServerPrivate::sendMouseEventUnfiltered(const QPoint &pos, int state, int wheel)
++void QWSServerPrivate::sendMouseEventUnfiltered(const QPoint &pos, int state, int wheel, int slot, int pressure)
+ {
+     const int btnMask = Qt::LeftButton | Qt::RightButton | Qt::MidButton;
+     QWSMouseEvent event;
+@@ -2333,6 +2336,8 @@ void QWSServerPrivate::sendMouseEventUnf
+     event.simpleData.state=state | qws_keyModifiers;
+     event.simpleData.delta = wheel;
+     event.simpleData.time=qwsServerPrivate->timer.elapsed();
++    event.simpleData.slot = slot;
++    event.simpleData.pressure = pressure;
+ 
+     static int oldstate = 0;
+ 
+@@ -2362,8 +2367,8 @@ void QWSServerPrivate::sendMouseEventUnf
+     if ( !imMouse )
+         qwsServer->d_func()->cursorClient = winClient;
+ 
+-    if (!(state&btnMask) && !qwsServerPrivate->mouseGrabbing)
+-        qwsServerPrivate->releaseMouse(qwsServerPrivate->mouseGrabber);
++    //if (!(state&btnMask) && !qwsServerPrivate->mouseGrabbing)
++        //qwsServerPrivate->releaseMouse(qwsServerPrivate->mouseGrabber);
+ }
+ 
+ /*!
+@@ -4869,7 +4874,7 @@ uint QWSInputMethod::inputResolutionShif
+ 
+     \sa mouseHandler(), sendEvent()
+ */
+-void QWSInputMethod::sendMouseEvent( const QPoint &pos, int state, int wheel )
++void QWSInputMethod::sendMouseEvent( const QPoint &pos, int state, int wheel, int slot, int pressure)
+ {
+         if (qt_last_x) {
+          *qt_last_x = pos.x();
+@@ -4877,7 +4882,7 @@ void QWSInputMethod::sendMouseEvent( con
+     }
+     QWSServer::mousePosition = pos;
+     qwsServerPrivate->mouseState = state;
+-    QWSServerPrivate::sendMouseEventUnfiltered(pos, state, wheel);
++    QWSServerPrivate::sendMouseEventUnfiltered(pos, state, wheel, slot, pressure);
+ }
+ #endif // QT_NO_QWS_INPUTMETHODS
+ 
+diff -rpu qt-everywhere-opensource-src-4.8.6.orig/src/gui/embedded/qwindowsystem_qws.h qt-everywhere-opensource-src-4.8.6/src/gui/embedded/qwindowsystem_qws.h
+--- qt-everywhere-opensource-src-4.8.6.orig/src/gui/embedded/qwindowsystem_qws.h	2016-08-02 14:22:02.201048748 +0300
++++ qt-everywhere-opensource-src-4.8.6/src/gui/embedded/qwindowsystem_qws.h	2016-08-02 14:28:02.361211530 +0300
+@@ -262,7 +262,7 @@ public:
+     static void setDefaultMouse(const char *);
+     static void setDefaultKeyboard(const char *);
+     static void setMaxWindowRect(const QRect&);
+-    static void sendMouseEvent(const QPoint& pos, int state, int wheel = 0);
++    static void sendMouseEvent(const QPoint& pos, int state, int wheel = 0, int slot = 0, int pressure = 1);
+ 
+     static void setBackground(const QBrush &);
+ #ifdef QT3_SUPPORT
+@@ -391,7 +391,7 @@ protected:
+     uint setInputResolution(bool isHigh);
+     uint inputResolutionShift() const;
+     // needed for required transform
+-    void sendMouseEvent(const QPoint &pos, int state, int wheel);
++    void sendMouseEvent(const QPoint &pos, int state, int wheel, int slot, int pressure);
+ 
+     void sendEvent(const QInputMethodEvent*);
+     void sendPreeditString(const QString &preeditString, int cursorPosition, int selectionLength = 0);
+diff -rpu qt-everywhere-opensource-src-4.8.6.orig/src/gui/embedded/qwsevent_qws.h qt-everywhere-opensource-src-4.8.6/src/gui/embedded/qwsevent_qws.h
+--- qt-everywhere-opensource-src-4.8.6.orig/src/gui/embedded/qwsevent_qws.h	2016-08-02 14:22:02.202048737 +0300
++++ qt-everywhere-opensource-src-4.8.6/src/gui/embedded/qwsevent_qws.h	2016-08-02 14:28:08.113150218 +0300
+@@ -132,7 +132,7 @@ struct QWSMouseEvent : QWSEvent {
+                 reinterpret_cast<char*>(&simpleData)) {}
+     struct SimpleData {
+         int window;
+-        int x_root, y_root, state, delta;
++        int x_root, y_root, state, delta, slot, pressure;
+         int time; // milliseconds
+     } simpleData;
+ };
+diff -rpu qt-everywhere-opensource-src-4.8.6.orig/src/gui/kernel/qapplication.cpp qt-everywhere-opensource-src-4.8.6/src/gui/kernel/qapplication.cpp
+--- qt-everywhere-opensource-src-4.8.6.orig/src/gui/kernel/qapplication.cpp	2016-08-02 14:22:02.206048694 +0300
++++ qt-everywhere-opensource-src-4.8.6/src/gui/kernel/qapplication.cpp	2016-08-02 14:28:21.261010070 +0300
+@@ -5948,11 +5948,11 @@ void QApplicationPrivate::translateRawTo
+             break;
+         }
+         default:
+-            if (widget->testAttribute(Qt::WA_WState_AcceptedTouchBeginEvent)) {
++            //if (widget->testAttribute(Qt::WA_WState_AcceptedTouchBeginEvent)) {
+                 if (touchEvent.type() == QEvent::TouchEnd)
+                     widget->setAttribute(Qt::WA_WState_AcceptedTouchBeginEvent, false);
+                 (void) QApplication::sendSpontaneousEvent(widget, &touchEvent);
+-            }
++            //}
+             break;
+         }
+     }
+diff -rpu qt-everywhere-opensource-src-4.8.6.orig/src/gui/kernel/qapplication_qws.cpp qt-everywhere-opensource-src-4.8.6/src/gui/kernel/qapplication_qws.cpp
+--- qt-everywhere-opensource-src-4.8.6.orig/src/gui/kernel/qapplication_qws.cpp	2016-08-02 14:22:02.210048652 +0300
++++ qt-everywhere-opensource-src-4.8.6/src/gui/kernel/qapplication_qws.cpp	2016-08-02 14:29:20.459379053 +0300
+@@ -432,6 +432,7 @@ class QETWidget : public QWidget
+ {
+ public:
+     bool translateMouseEvent(const QWSMouseEvent *, int oldstate);
++    bool orig_translateMouseEvent(const QWSMouseEvent *, int state, int oldstate);
+     bool translateKeyEvent(const QWSKeyEvent *, bool grab);
+     bool translateRegionEvent(const QWSRegionEvent *);
+ #ifndef QT_NO_QWSEMBEDWIDGET
+@@ -2708,10 +2709,10 @@ int QApplication::qwsProcessEvent(QWSEve
+     Q_D(QApplication);
+     QScopedLoopLevelCounter loopLevelCounter(d->threadData);
+     int oldstate = -1;
+-    bool isMove = false;
++    //bool isMove = false;
+     if (event->type == QWSEvent::Mouse) {
+         QWSMouseEvent::SimpleData &mouse = event->asMouse()->simpleData;
+-        isMove = mouse_x_root != mouse.x_root || mouse_y_root != mouse.y_root;
++        //isMove = mouse_x_root != mouse.x_root || mouse_y_root != mouse.y_root;
+         oldstate = mouse_state;
+         mouse_x_root = mouse.x_root;
+         mouse_y_root = mouse.y_root;
+@@ -2964,6 +2965,7 @@ int QApplication::qwsProcessEvent(QWSEve
+         // Beware of reentrancy: we can enter a modal state
+         // inside translateMouseEvent
+ 
++	#if 0
+         if (isMove) {
+             QWSMouseEvent move = *me;
+             move.simpleData.state = oldstate;
+@@ -2972,6 +2974,9 @@ int QApplication::qwsProcessEvent(QWSEve
+         if ((mouse.state&Qt::MouseButtonMask) != (oldstate&Qt::MouseButtonMask)) {
+             widget->translateMouseEvent(me, oldstate);
+         }
++	#else
++	widget->translateMouseEvent(me, oldstate);
++	#endif
+ 
+         if (mouse.delta != 0)
+             widget->translateWheelEvent(me);
+@@ -3321,7 +3326,107 @@ bool QETWidget::translateWheelEvent(cons
+ #endif
+ }
+ 
+-bool QETWidget::translateMouseEvent(const QWSMouseEvent *event, int prevstate)
++bool QETWidget::translateMouseEvent(const QWSMouseEvent *event, int)
++{
++    QWidget *widget = this;
++    const QWSMouseEvent::SimpleData &mouse = event->simpleData;
++    QPoint pos = mapFromGlobal(QPoint(mouse.x_root, mouse.y_root));
++
++    static QList<QTouchEvent::TouchPoint> touchPoints;
++    int slot = mouse.slot;
++    int pressure = mouse.pressure;
++    int touchpoints_num = touchPoints.size();
++
++    if (!pressure) {
++	    int i;
++	    bool have_unreleased = false;
++
++	    if (!touchpoints_num) {
++		    return true;
++	    }
++
++	    if (slot >= touchpoints_num) {
++		    return true;
++	    }
++
++	    QTouchEvent::TouchPoint &p = touchPoints[slot];
++	    if (p.state() == Qt::TouchPointReleased) {
++		    return true;
++	    }
++
++	    p.setState(slot ? Qt::TouchPointReleased : (Qt::TouchPointReleased | Qt::TouchPointPrimary));
++
++	    QApplicationPrivate::translateRawTouchEvent(widget, QTouchEvent::TouchScreen, touchPoints);
++
++	    for (i = 0; i < touchpoints_num; ++i) {
++		    QTouchEvent::TouchPoint &p = touchPoints[i];
++		    if (p.state() != Qt::TouchPointReleased)
++			    have_unreleased = true;
++	    }
++
++
++	    if (have_unreleased) {
++		    return true;
++	    }
++	    touchPoints.clear();
++	    return QETWidget::orig_translateMouseEvent(event, 0, Qt::LeftButton);
++	    return true;
++    }
++
++    QPointF screenPos(pos.x(), pos.y());
++    QRectF screenRect;
++    screenRect.moveCenter(screenPos);
++
++    if (slot > touchpoints_num) {
++	    return true;
++    } else if (slot == touchpoints_num) {
++	    QTouchEvent::TouchPoint p;
++	    p.setId(slot);
++	    p.setPressure(pressure);
++	    p.setState(slot ? Qt::TouchPointPressed : (Qt::TouchPointPressed | Qt::TouchPointPrimary));
++
++	    p.setScreenRect(screenRect);
++	    p.setNormalizedPos(QPointF(screenPos.x() / qt_screen->width(), screenPos.y() / qt_screen->height()));
++
++	    touchPoints.append(p);
++	    ++touchpoints_num;
++
++	    if ((touchpoints_num == 1) && (slot == 0)) {
++	    	    QETWidget::orig_translateMouseEvent(event, Qt::LeftButton, 0);
++	    }
++    } else {
++	    QTouchEvent::TouchPoint &p = touchPoints[slot];
++	    p.setPressure(pressure);
++	    p.setState(slot ? Qt::TouchPointMoved : (Qt::TouchPointMoved | Qt::TouchPointPrimary));
++
++	    p.setScreenRect(screenRect);
++	    p.setNormalizedPos(QPointF(screenPos.x() / qt_screen->width(), screenPos.y() / qt_screen->height()));
++
++	    if ((touchpoints_num == 1) && (slot == 0)) {
++	    	    QETWidget::orig_translateMouseEvent(event, Qt::LeftButton, Qt::LeftButton);
++	    }
++    }
++
++    Qt::TouchPointStates prevst[touchpoints_num];
++    for (int i = 0; i < touchpoints_num; ++i) {
++	    QTouchEvent::TouchPoint &p = touchPoints[i];
++	    prevst[i] = p.state();
++	    if ((i != slot) && (p.state() != Qt::TouchPointReleased)) {
++		    p.setState(slot ? Qt::TouchPointStationary : (Qt::TouchPointStationary | Qt::TouchPointPrimary));
++	    }
++    }
++
++    QApplicationPrivate::translateRawTouchEvent(widget, QTouchEvent::TouchScreen, touchPoints);
++
++    for (int i = 0; i < touchpoints_num; ++i) {
++	    QTouchEvent::TouchPoint &p = touchPoints[i];
++	    p.setState(slot ? prevst[i] : (prevst[i] | Qt::TouchPointPrimary));
++    }
++
++    return true;
++}
++
++bool QETWidget::orig_translateMouseEvent(const QWSMouseEvent *event, int state, int prevstate)
+ {
+     static bool manualGrab = false;
+     QPoint pos;
+@@ -3341,16 +3446,16 @@ bool QETWidget::translateMouseEvent(cons
+ 
+     QEvent::Type type = QEvent::None;
+ 
+-    Qt::MouseButtons buttonstate = Qt::MouseButtons(mouse.state & Qt::MouseButtonMask);
+-    Qt::KeyboardModifiers keystate = Qt::KeyboardModifiers(mouse.state & Qt::KeyboardModifierMask);
++    Qt::MouseButtons buttonstate = Qt::MouseButtons(state & Qt::MouseButtonMask);
++    Qt::KeyboardModifiers keystate = Qt::KeyboardModifiers(state & Qt::KeyboardModifierMask);
+ 
+-    if (mouse.state == prevstate) {
++    if (state == prevstate) {
+         // mouse move
+         type = QEvent::MouseMove;
+-    } else if ((mouse.state&AnyButton) != (prevstate&AnyButton)) {
++    } else if ((state&AnyButton) != (prevstate&AnyButton)) {
+         Qt::MouseButtons current_buttons = Qt::MouseButtons(prevstate&Qt::MouseButtonMask);
+         for (button = Qt::LeftButton; !type && button <= Qt::MidButton; button<<=1) {
+-            if ((mouse.state&button) != (current_buttons&button)) {
++            if ((state&button) != (current_buttons&button)) {
+                 // button press or release
+                 current_buttons = Qt::MouseButtons(current_buttons ^ button);
+ 
+@@ -3362,7 +3467,7 @@ bool QETWidget::translateMouseEvent(cons
+                 //        QInputContext::reset(oldFocus);
+ 
+ #endif
+-                if (mouse.state&button) { //button press
++                if (state&button) { //button press
+                     qt_button_down = childAt(pos);
+                     if (!qt_button_down)
+                         qt_button_down = this;
+@@ -3493,7 +3598,7 @@ bool QETWidget::translateMouseEvent(cons
+ 
+         QPointer<QWidget> leaveAfterRelease = 0;
+         if (type == QEvent::MouseButtonRelease &&
+-            (mouse.state & (~button) & (Qt::LeftButton |
++            (state & (~button) & (Qt::LeftButton |
+                                     Qt::MidButton |
+                                     Qt::RightButton)) == 0) {
+             // Button released outside the widget -> leave the widget after the
+diff -rpu o/src/gui/kernel/qstandardgestures.cpp c/src/gui/kernel/qstandardgestures.cpp
+--- o/src/gui/kernel/qstandardgestures.cpp	2016-07-12 14:54:44.458432642 +0300
++++ c/src/gui/kernel/qstandardgestures.cpp	2016-07-12 15:06:45.779426998 +0300
+@@ -509,7 +509,10 @@ QTapAndHoldGestureRecognizer::recognize(
+     if (object == state && event->type() == QEvent::Timer) {
+         q->killTimer(d->timerId);
+         d->timerId = 0;
+-        return QGestureRecognizer::FinishGesture | QGestureRecognizer::ConsumeEventHint;
++        if (q->state() == Qt::GestureStarted || q->state() == QGestureRecognizer::MayBeGesture)
++            return QGestureRecognizer::FinishGesture | QGestureRecognizer::ConsumeEventHint;
++        else
++            return QGestureRecognizer::CancelGesture;
+     }
+ 
+     const QTouchEvent *ev = static_cast<const QTouchEvent *>(event);
