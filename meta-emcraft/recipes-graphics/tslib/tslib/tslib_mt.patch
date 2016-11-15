@@ -1,0 +1,297 @@
+diff -rpu tslib-1.1.orig/plugins/input-raw.c tslib-1.1/plugins/input-raw.c
+--- tslib-1.1.orig/plugins/input-raw.c	2016-08-02 14:22:10.314962307 +0300
++++ tslib-1.1/plugins/input-raw.c	2016-08-02 14:46:36.192337097 +0300
+@@ -50,12 +50,15 @@
+ #define GRAB_EVENTS_WANTED	1
+ #define GRAB_EVENTS_ACTIVE	2
+ 
++#define MAX_SLOTS		(10)
++
+ struct tslib_input {
+ 	struct tslib_module_info module;
+ 
+-	int	current_x;
+-	int	current_y;
+-	int	current_p;
++	int	xs[MAX_SLOTS];
++	int	ys[MAX_SLOTS];
++	int	ps[MAX_SLOTS];
++	int	current_slot;
+ 
+ 	int	sane_fd;
+ 	int	using_syn;
+@@ -108,8 +111,6 @@ static int check_fd(struct tslib_input *
+ 	when not touched, the pressure is forced to 0. */
+ 
+ 	if (!(absbit[BIT_WORD(ABS_PRESSURE)] & BIT_MASK(ABS_PRESSURE))) {
+-		i->current_p = 255;
+-
+ 		if ((ioctl(ts->fd, EVIOCGBIT(EV_KEY, sizeof(keybit)), keybit) < 0) ||
+ 			!(keybit[BIT_WORD(BTN_TOUCH)] & BIT_MASK(BTN_TOUCH) ||
+ 			  keybit[BIT_WORD(BTN_LEFT)] & BIT_MASK(BTN_LEFT))) {
+@@ -140,7 +141,6 @@ static int ts_input_read(struct tslib_mo
+ 	struct input_event ev;
+ 	int ret = nr;
+ 	int total = 0;
+-	int pen_up = 0;
+ 
+ 	if (i->sane_fd == 0)
+ 		i->sane_fd = check_fd(i);
+@@ -148,149 +148,97 @@ static int ts_input_read(struct tslib_mo
+ 	if (i->sane_fd == -1)
+ 		return 0;
+ 
+-	if (i->using_syn) {
+-		while (total < nr) {
+-			ret = read(ts->fd, &ev, sizeof(struct input_event));
+-			if (ret < (int)sizeof(struct input_event)) {
+-				total = -1;
+-				break;
+-			}
++	while (total < nr) {
++		ret = read(ts->fd, &ev, sizeof(struct input_event));
++		if (ret < (int)sizeof(struct input_event)) {
++			total = -1;
++			break;
++		}
+ 
+-			switch (ev.type) {
+-			case EV_KEY:
+-				switch (ev.code) {
+-				case BTN_TOUCH:
+-				case BTN_LEFT:
+-					if (ev.value == 0)
+-						pen_up = 1;
+-					break;
++		switch (ev.type) {
++		case EV_KEY:
++			switch (ev.code) {
++			case BTN_TOUCH:
++			case BTN_LEFT:
++				if (ev.value == 0) {
++					int j = 0;
++					i->current_slot = 0;
++					for (j = 0; j < MAX_SLOTS; ++j) {
++						i->xs[j] = -1;
++						i->ys[j] = -1;
++						i->ps[j] = 0;
++					}
+ 				}
+ 				break;
+-			case EV_SYN:
+-				if (ev.code == SYN_REPORT) {
+-					/* Fill out a new complete event */
+-					if (pen_up) {
+-						samp->x = 0;
+-						samp->y = 0;
+-						samp->pressure = 0;
+-						pen_up = 0;
+-					} else {
+-						samp->x = i->current_x;
+-						samp->y = i->current_y;
+-						samp->pressure = i->current_p;
+-				}
+-				samp->tv = ev.time;
+-	#ifdef DEBUG
+-				fprintf(stderr, "RAW---------------------> %d %d %d %d.%d\n",
++			}
++			break;
++		case EV_SYN:
++			if (ev.code == SYN_REPORT) {
++				/* Fill out a new complete event */
++				if ((i->xs[i->current_slot] != -1) && (i->ys[i->current_slot] != -1)) {
++					samp->x = i->xs[i->current_slot];
++					samp->y = i->ys[i->current_slot];
++					samp->pressure = i->ps[i->current_slot];
++					samp->slot = i->current_slot;
++					samp->tv = ev.time;
++#ifdef DEBUG
++					fprintf(stderr, "RAW---------------------> %d %d %d %d.%d\n",
+ 						samp->x, samp->y, samp->pressure, samp->tv.tv_sec,
+ 						samp->tv.tv_usec);
+-	#endif /* DEBUG */
+-				samp++;
+-				total++;
++#endif /* DEBUG */
++					samp++;
++					total++;
+ 				}
++			}
++			break;
++		case EV_ABS:
++			switch (ev.code) {
++			case ABS_X:
++			case ABS_Y:
+ 				break;
+-			case EV_ABS:
+-				switch (ev.code) {
+-				case ABS_X:
+-					i->current_x = ev.value;
+-					break;
+-				case ABS_Y:
+-					i->current_y = ev.value;
+-					break;
+-				case ABS_MT_POSITION_X:
+-					i->current_x = ev.value;
+-					break;
+-				case ABS_MT_POSITION_Y:
+-					i->current_y = ev.value;
+-					break;
+-				case ABS_PRESSURE:
+-					i->current_p = ev.value;
+-					break;
+-				}
++			case ABS_MT_POSITION_X:
++				i->xs[i->current_slot] = ev.value;
+ 				break;
+-			}
+-		}
+-		ret = total;
+-	} else {
+-		unsigned char *p = (unsigned char *) &ev;
+-		int len = sizeof(struct input_event);
+-
+-		while (total < nr) {
+-			ret = read(ts->fd, p, len);
+-			if (ret == -1) {
+-				if (errno == EINTR) {
+-					continue;
+-				}
++			case ABS_MT_POSITION_Y:
++				i->ys[i->current_slot] = ev.value;
+ 				break;
+-			}
+-
+-			if (ret < (int)sizeof(struct input_event)) {
+-				/* short read
+-				 * restart read to get the rest of the event
+-				 */
+-				p += ret;
+-				len -= ret;
+-				continue;
+-			}
+-			/* successful read of a whole event */
+-
+-			if (ev.type == EV_ABS) {
+-				switch (ev.code) {
+-				case ABS_X:
+-					if (ev.value != 0) {
+-						samp->x = i->current_x = ev.value;
+-						samp->y = i->current_y;
+-						samp->pressure = i->current_p;
+-					} else {
+-						fprintf(stderr, "tslib: dropped x = 0\n");
+-						continue;
+-					}
+-					break;
+-				case ABS_Y:
+-					if (ev.value != 0) {
+-						samp->x = i->current_x;
+-						samp->y = i->current_y = ev.value;
+-						samp->pressure = i->current_p;
+-					} else {
+-						fprintf(stderr, "tslib: dropped y = 0\n");
+-						continue;
+-					}
+-					break;
+-				case ABS_PRESSURE:
+-					samp->x = i->current_x;
+-					samp->y = i->current_y;
+-					samp->pressure = i->current_p = ev.value;
+-					break;
+-				}
+-				samp->tv = ev.time;
+-	#ifdef DEBUG
+-				fprintf(stderr, "RAW---------------------------> %d %d %d\n",
+-					samp->x, samp->y, samp->pressure);
+-	#endif /* DEBUG */
+-				samp++;
+-				total++;
+-			} else if (ev.type == EV_KEY) {
+-				switch (ev.code) {
+-				case BTN_TOUCH:
+-				case BTN_LEFT:
+-					if (ev.value == 0) {
+-						/* pen up */
+-						samp->x = 0;
+-						samp->y = 0;
+-						samp->pressure = 0;
++			case ABS_PRESSURE:
++				i->ps[i->current_slot] = ev.value;
++				break;
++			case ABS_MT_SLOT:
++				i->current_slot = ev.value;
++				break;
++			case ABS_MT_TRACKING_ID:
++				if (-1 == ev.value) {
++					i->ps[i->current_slot] = 0;
++					/* Fill out a new complete event */
++					if ((i->xs[i->current_slot] != -1) && (i->ys[i->current_slot] != -1)) {
++						samp->x = i->xs[i->current_slot];
++						samp->y = i->ys[i->current_slot];
++						samp->pressure = i->ps[i->current_slot];
++						samp->slot = i->current_slot;
+ 						samp->tv = ev.time;
++#ifdef DEBUG
++						fprintf(stderr, "RAW---------------------> %d %d %d %d.%d\n",
++							samp->x, samp->y, samp->pressure, samp->tv.tv_sec,
++							samp->tv.tv_usec);
++#endif /* DEBUG */
+ 						samp++;
+ 						total++;
+ 					}
+-					break;
++					i->xs[i->current_slot] = -1;
++					i->ys[i->current_slot] = -1;
++				} else {
++					i->ps[i->current_slot] = 255;
++					i->xs[i->current_slot] = -1;
++					i->ys[i->current_slot] = -1;
+ 				}
+-			} else {
+-				fprintf(stderr, "tslib: Unknown event type %d\n", ev.type);
++				break;
+ 			}
+-			p = (unsigned char *) &ev;
++			break;
+ 		}
+-		ret = total;
+ 	}
++	ret = total;
+ 
+ 	return ret;
+ }
+@@ -348,15 +296,19 @@ static const struct tslib_vars raw_vars[
+ TSAPI struct tslib_module_info *input_mod_init(struct tsdev *dev, const char *params)
+ {
+ 	struct tslib_input *i;
++	int k;
+ 
+ 	i = malloc(sizeof(struct tslib_input));
+ 	if (i == NULL)
+ 		return NULL;
+ 
+ 	i->module.ops = &__ts_input_ops;
+-	i->current_x = 0;
+-	i->current_y = 0;
+-	i->current_p = 0;
++	for (k = 0; k < MAX_SLOTS; ++k) {
++		i->xs[k] = -1;
++		i->ys[k] = -1;
++		i->ps[k] = 0;
++	}
++	i->current_slot = 0;
+ 	i->sane_fd = 0;
+ 	i->using_syn = 0;
+ 	i->grab_events = 0;
+diff -rpu tslib-1.1.orig/src/tslib.h tslib-1.1/src/tslib.h
+--- tslib-1.1.orig/src/tslib.h	2016-08-02 14:22:10.316962286 +0300
++++ tslib-1.1/src/tslib.h	2016-08-02 14:47:10.565970210 +0300
+@@ -43,6 +43,7 @@ struct ts_sample {
+ 	int		x;
+ 	int		y;
+ 	unsigned int	pressure;
++	int		slot;
+ 	struct timeval	tv;
+ };
+ 
