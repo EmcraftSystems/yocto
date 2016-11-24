@@ -140,6 +140,9 @@ IMAGE_INSTALL += "\
 	      minicom			\
 	      i2c-tools			\
 	      lcdtest			\
+	      fuse			\
+	      libmtp			\
+	      simple-mtpfs		\
 	      "
 
 export IMAGE_BASENAME = "core-image-qte-sdk"
