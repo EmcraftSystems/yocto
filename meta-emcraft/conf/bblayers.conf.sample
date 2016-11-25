@@ -9,7 +9,6 @@ BBLAYERS ?= " \
   ##COREBASE##/meta \
   ##COREBASE##/meta-yocto \
   ##COREBASE##/meta-yocto-bsp \
-  ##COREBASE##/meta-java \
   ##COREBASE##/meta-emcraft \
   "
 BBLAYERS_NON_REMOVABLE ?= " \
