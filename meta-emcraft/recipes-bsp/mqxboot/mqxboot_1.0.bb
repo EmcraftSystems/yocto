@@ -7,7 +7,9 @@ DEPENDS = "kernel-module-mcc"
 
 inherit autotools
 
-SRC_URI = "http://repository.timesys.com/buildsources/m/mqxboot/mqxboot-${PV}/mqxboot-${PV}.tar.bz2"
+SRC_URI = "http://repository.timesys.com/buildsources/m/mqxboot/mqxboot-${PV}/mqxboot-${PV}.tar.bz2 \
+	  file://mqxboot-remove-debug-printout.patch \
+	  "
 
 SRC_URI[md5sum] = "2c0cb68538f54cb2a272594914ff553c"
 SRC_URI[sha256sum] = "9dbdfc625de0673fa7257e0b41e61001ef6edecb5799a80cef787522a4a8b806"
