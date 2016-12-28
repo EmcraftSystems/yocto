@@ -143,6 +143,9 @@ IMAGE_INSTALL += "\
 	      fuse			\
 	      libmtp			\
 	      simple-mtpfs		\
+	      libmcc			\
+	      libcmsis			\
+	      mqxboot			\
 	      "
 
 export IMAGE_BASENAME = "core-image-qte-sdk"
