@@ -146,6 +146,7 @@ IMAGE_INSTALL += "\
 	      libmcc			\
 	      libcmsis			\
 	      mqxboot			\
+	      evtest			\
 	      "
 
 export IMAGE_BASENAME = "core-image-qte-sdk"
