@@ -147,6 +147,7 @@ IMAGE_INSTALL += "\
 	      libcmsis			\
 	      mqxboot			\
 	      evtest			\
+	      iptables			\
 	      "
 
 export IMAGE_BASENAME = "core-image-qte-sdk"
