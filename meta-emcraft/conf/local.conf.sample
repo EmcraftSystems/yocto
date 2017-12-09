@@ -41,19 +41,25 @@ PACKAGECONFIG_remove_pn-dbus = " x11 "
 
 LICENSE_FLAGS_WHITELIST = "commercial commercial_gst-ffmpeg commercial_gst-fluendo-mp3 commercial_gst-plugins-ugly commercial_libmad commercial_mpeg2dec commercial_liba52 commercial_lame commercial_libav commercial_x264"
 
+SRCPV = "${CLEAN-VERSION}"
+
 UBOOT_SRCPV = "${SRCPV}"
 UBOOT_PV = "git${SRCPV}"
 LINUX_SRCPV = "${SRCPV}"
 
-UBOOT_GIT_REPO ?= "git://ocean/SR/git/A2F/u-boot-vybrid;nobranch=1;protocol=ssh;rev=${UBOOT_GIT_REV}"
+# Official Emcraft GitHub repos
+UBOOT_GIT_REPO ?= "git://github.com/EmcraftSystems/u-boot-vybrid;nobranch=1;rev=${UBOOT_GIT_REV}"
+# UBOOT_GIT_REPO ?= "git://ocean/SR/git/A2F/u-boot-vybrid;nobranch=1;protocol=ssh;rev=${UBOOT_GIT_REV}"
 UBOOT_S="${WORKDIR}/git"
-UBOOT_GIT_REV ?= "1bc2807dd79d9bf67f5d0d6d16fbfc27f296d45a"
+UBOOT_GIT_REV ?= "271dc419ee2d7d63ac8a5972f3781997b8e56c12"
 
-LINUX_GIT_REPO ?= "git://ocean/SR/git/A2F/linux-upstream;nobranch=1;protocol=ssh;rev=${LINUX_GIT_REV}"
-LINUX_GIT_REV ?= "f4d242a83e88ebe9c03038805e6b91dd92b32be9"
+# Official Emcraft GitHub repos
+LINUX_GIT_REPO ?= "git://github.com/EmcraftSystems/linux-upstream;nobranch=1;rev=${LINUX_GIT_REV}"
+# LINUX_GIT_REPO ?= "git://ocean/SR/git/A2F/linux-upstream;nobranch=1;protocol=ssh;rev=${LINUX_GIT_REV}"
+LINUX_GIT_REV ?= "75b54af873bdf0f5a4ca3aead527b19653eddb00"
 LINUX_S="${WORKDIR}/git"
 
-CLEAN-VERSION = "vf6-2.2.0"
+CLEAN-VERSION = "vf6-2.2.2"
 
 #
 # Where to place downloads
@@ -66,8 +72,7 @@ CLEAN-VERSION = "vf6-2.2.0"
 #
 # The default is a downloads directory under TOPDIR which is the build directory.
 #
-DL_DIR = "/work/psl/yocto-downloads"
-
+DL_DIR ?= "/work/tmp/downloads/"
 #
 # Where to place shared-state files
 #

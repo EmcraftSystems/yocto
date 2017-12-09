@@ -10,6 +10,8 @@ BBLAYERS ?= " \
   ##COREBASE##/meta-yocto \
   ##COREBASE##/meta-yocto-bsp \
   ##COREBASE##/meta-emcraft \
+  ##COREBASE##/meta-openembedded/meta-oe \
+  ##COREBASE##/meta-openembedded/meta-webserver \
   "
 BBLAYERS_NON_REMOVABLE ?= " \
   ##COREBASE##/meta \
