@@ -72,8 +72,7 @@ CLEAN-VERSION = "vf6-2.2.2"
 #
 # The default is a downloads directory under TOPDIR which is the build directory.
 #
-DL_DIR = "/work/psl/yocto-downloads"
-
+DL_DIR ?= "/work/tmp/downloads/"
 #
 # Where to place shared-state files
 #
