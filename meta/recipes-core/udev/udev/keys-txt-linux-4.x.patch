@@ -1,0 +1,11 @@
+--- udev-182.orig/Makefile.am	2018-09-01 11:38:37.587724569 +0300
++++ udev-182/Makefile.am	2018-09-01 12:07:48.150653542 +0300
+@@ -591,7 +591,7 @@ dist_udevkeymapforcerel_DATA = \
+ 	src/keymap/force-release-maps/samsung-other \
+ 	src/keymap/force-release-maps/common-volume-keys
+ 
+-src/keymap/keys.txt: $(INCLUDE_PREFIX)/linux/input.h
++src/keymap/keys.txt: $(INCLUDE_PREFIX)/linux/input-event-codes.h
+ 	$(AM_V_at)mkdir -p src/keymap
+ 	$(AM_V_GEN)$(AWK) '/^#define.*KEY_[^ ]+[ \t]+[0-9]/ { if ($$2 != "KEY_MAX") { print $$2 } }' < $< | sed 's/^KEY_COFFEE$$/KEY_SCREENLOCK/' > $@
+ 

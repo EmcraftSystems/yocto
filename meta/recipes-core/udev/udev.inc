@@ -29,6 +29,8 @@ SRC_URI = "${KERNELORG_MIRROR}/linux/utils/kernel/hotplug/udev-${PV}.tar.gz \
            file://add-install-ptest.patch \
            file://fix_rule-syntax-regex-ptest.patch \
            file://run-ptest \
+           file://keys-txt-linux-4.x.patch \
+           file://mtd-stdint.patch \
            file://init"
 
 inherit autotools pkgconfig update-rc.d ptest
