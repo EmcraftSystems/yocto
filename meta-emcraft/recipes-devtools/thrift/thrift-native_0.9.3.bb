@@ -14,7 +14,7 @@ SRCREV = "0.9.3"
 PV = "git${SRCPV}"
 PR = "r0"
 
-SRC_URI = "git://git-wip-us.apache.org/repos/asf/thrift.git;branch=0.9.3;protocol=https"
+SRC_URI = "git://github.com/apache/thrift.git;branch=0.9.3;protocol=git"
 
 EXTRA_OECONF = "--disable-Werror --without-tests \
 	     --without-zlib --without-libevent --without-ruby \
