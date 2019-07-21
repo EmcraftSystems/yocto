@@ -148,6 +148,9 @@ IMAGE_INSTALL += "\
 	      mqxboot			\
 	      evtest			\
 	      iptables			\
+	      iproute2			\
+	      can-utils			\
+	      libsocketcan		\
 	      "
 
 export IMAGE_BASENAME = "core-image-qte-sdk"
