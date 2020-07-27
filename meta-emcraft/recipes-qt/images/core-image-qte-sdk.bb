@@ -2,21 +2,33 @@ IMAGE_FEATURES += "tools-debug \
 			tools-sdk dev-pkgs package-management splash \
 			ssh-server-openssh"
 
-CORE_IMAGE_EXTRA_INSTALL = "packagegroup-qte-toolchain-target qt4-embedded-tools \
-			qt4-embedded-demos qt4-embedded-examples \
-			qt4-embedded-plugin-mousedriver-tslib \
-			tslib tslib-calibrate tslib-tests qt-demo-init \
-			packagegroup-base-nfs				\
-			ethtool						\
-			"
+# CORE_IMAGE_EXTRA_INSTALL = "packagegroup-qte-toolchain-target qt4-embedded-tools \
+# 			qt4-embedded-demos qt4-embedded-examples \
+# 			qt4-embedded-plugin-mousedriver-tslib \
+# 			tslib tslib-calibrate tslib-tests qt-demo-init \
+# 			packagegroup-base-nfs				\
+# 			ethtool						\
+#			"
+
+CORE_IMAGE_EXTRA_INSTALL = "packagegroup-qt5-toolchain-target"
 
 LICENSE = "MIT"
 
+KERNELDEPMODDEPEND = ""
+
 inherit core-image
+
+DEPENDS_remove = "linux-imx"
+
+# do_rootfs[noexec] = "1"
+# do_image[noexec] = "1"
+# do_image_ext4[noexec] = "1"
+# do_image_sdcard[noexec] = "1"
+# do_image_tar[noexec] = "1"
 
 IMAGE_INSTALL += "\
 	      libstdc++ \
-	      libpng12 \
+	      libpng \
 	      zlib \	      
 	      icu			\
 	      freetype \
@@ -54,34 +66,8 @@ IMAGE_INSTALL += "\
 		lzo \
 		fbset \
 		opkg \
-		x264 \
-		mplayer \
 		strace \
 		gdbserver \
-		spidev-test \
-		maliit-framework \
-		maliit-plugins \
-		libqt-embeddedcore4 \
-		libqt-embeddedgui4 \
-		libqt-embeddednetwork4 \
-		qt4-embedded-qml-plugins \
-		pincharea \
-		experimental-gestures \
-		qt4-embedded-fonts \
-		qt4-embedded-fonts-qpf \
-		qt4-embedded-fonts-pfa \
-		qt4-embedded-fonts-pfb \
-		qt4-embedded-fonts-qpf \
-		qt4-embedded-fonts-ttf-dejavu \
-		qt4-embedded-fonts-ttf-vera \
-		qt4-embedded-plugin-mousedriver-tslib \
-		qt4-embedded-plugin-imageformat-jpeg \
-		qt4-embedded-plugin-gfxdriver-gfxtransformed	\
-		qt4serialport \
-		libqt-embeddeddeclarative4 \
-		libqt-embeddedxmlpatterns4 \
-		libqt-embeddedscript4 \
-		libqt-embeddedsql4 \
 	      openssl-misc		\
 	      openssl-engines		\
 	      wireless-tools		\
@@ -121,7 +107,6 @@ IMAGE_INSTALL += "\
 	      gst-plugins-good-video4linux2 \
 	      gst-plugins-good-wavenc \
 	      gst-plugins-good-wavparse \
-	      log4cxx		\
 	      sysklogd			\
 	      cronie			\
 	      tzdata			\
@@ -139,18 +124,58 @@ IMAGE_INSTALL += "\
 	      expect			\
 	      minicom			\
 	      i2c-tools			\
-	      lcdtest			\
 	      fuse			\
 	      libmtp			\
 	      simple-mtpfs		\
-	      libmcc			\
-	      libcmsis			\
-	      mqxboot			\
-	      evtest			\
 	      iptables			\
 	      iproute2			\
 	      can-utils			\
 	      libsocketcan		\
+	      python-django		\
+	      nginx			\
+	      gunicorn			\
+	      gsl			\
+	      libftdi			\
 	      "
+
+# require recipes-fsl/images/fsl-image-qt5-validation-imx.bb
+
+inherit populate_sdk_qt5
+
+
+# Install Freescale QT demo applications
+QT5_IMAGE_INSTALL_APPS = ""
+QT5_IMAGE_INSTALL_APPS_imxgpu3d = "${@bb.utils.contains("MACHINE_GSTREAMER_1_0_PLUGIN", "imx-gst1.0-plugin", "imx-qtapplications", "", d)}"
+
+# Install fonts
+QT5_FONTS = "ttf-dejavu-common ttf-dejavu-sans ttf-dejavu-sans-mono ttf-dejavu-serif "
+
+# Install Freescale QT demo applications for X11 backend only
+MACHINE_QT5_MULTIMEDIA_APPS = ""
+QT5_IMAGE_INSTALL = ""
+QT5_IMAGE_INSTALL_common = " \
+    packagegroup-qt5-demos \
+    ${QT5_FONTS} \
+    ${QT5_IMAGE_INSTALL_APPS} \
+    ${@bb.utils.contains('DISTRO_FEATURES', 'x11', 'libxkbcommon', '', d)} \
+    ${@bb.utils.contains('DISTRO_FEATURES', 'wayland', 'qtwayland qtwayland-plugins', '', d)}\
+    "
+
+QT5_IMAGE_INSTALL_imxgpu2d = "${@bb.utils.contains('DISTRO_FEATURES', 'x11','${QT5_IMAGE_INSTALL_common}', \
+    'qtbase qtbase-plugins', d)}"
+
+QT5_IMAGE_INSTALL_imxpxp = "${@bb.utils.contains('DISTRO_FEATURES', 'x11','${QT5_IMAGE_INSTALL_common}', \
+    'qtbase qtbase-examples qtbase-plugins', d)}"
+
+QT5_IMAGE_INSTALL_imxgpu3d = " \
+    ${QT5_IMAGE_INSTALL_common} \
+    gstreamer1.0-plugins-good-qt"
+
+# Add packagegroup-qt5-webengine to QT5_IMAGE_INSTALL_mx6 and comment out the line below to install qtwebengine to the rootfs.
+QT5_IMAGE_INSTALL_remove = " packagegroup-qt5-webengine"
+
+IMAGE_INSTALL += " \
+${QT5_IMAGE_INSTALL} \
+"
 
 export IMAGE_BASENAME = "core-image-qte-sdk"
