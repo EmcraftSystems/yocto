@@ -29,7 +29,7 @@ DEPENDS_remove = "linux-imx"
 IMAGE_INSTALL += "\
 	      libstdc++ \
 	      libpng \
-	      zlib \	      
+	      zlib \
 	      icu			\
 	      freetype \
 		glib-2.0 \
@@ -136,6 +136,10 @@ IMAGE_INSTALL += "\
 	      gunicorn			\
 	      gsl			\
 	      libftdi			\
+	      dhcp-server		\
+	      boost			\
+	      wt			\
+	      mdns			\
 	      "
 
 # require recipes-fsl/images/fsl-image-qt5-validation-imx.bb
