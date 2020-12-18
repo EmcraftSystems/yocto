@@ -151,6 +151,10 @@ IMAGE_INSTALL += "\
 	      iproute2			\
 	      can-utils			\
 	      libsocketcan		\
+	      gnupg \
+	      boost			\
+	      wt			\
+              dbus                      \
 	      "
 
 export IMAGE_BASENAME = "core-image-qte-sdk"
