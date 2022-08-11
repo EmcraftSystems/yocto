@@ -155,6 +155,8 @@ IMAGE_INSTALL += "\
 	      boost			\
 	      wt			\
               dbus                      \
+	      mosquitto			\
+	      gsl			\
 	      "
 
 export IMAGE_BASENAME = "core-image-qte-sdk"
