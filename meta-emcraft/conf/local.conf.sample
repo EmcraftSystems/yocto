@@ -236,5 +236,7 @@ BB_DISKMON_DIRS = "\
 CONF_VERSION = "1"
 
 # For building with 4.9.88 linux headers
-# PREFERRED_VERSION_linux-libc-headers="4.9.88"
-# PREFERRED_VERSION_nativesdk-linux-libc-headers="4.9.88"
+PREFERRED_VERSION_linux-libc-headers="4.9.88"
+PREFERRED_VERSION_nativesdk-linux-libc-headers="4.9.88"
+
+SRC_URI_pn-mesa = "https://people.freedesktop.org/~brianp/mesa/older-versions/11.x/${PV}/mesa-${PV}.tar.xz"
