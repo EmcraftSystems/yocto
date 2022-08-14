@@ -159,6 +159,28 @@ IMAGE_INSTALL += "\
 	      gsl			\
 	      ntp			\
 	      mdns			\
+	      phpmyadmin		\
+	      gtk+3			\
+	      python3			\
+	      python3-subprocess	\
+	      at-spi2-core		\
+	      gpgme			\
+	      nginx			\
+	      uw-imap			\
+	      mysql5			\
+	      gunicorn			\
+	      alsa-tools		\
+	      alsa-utils		\
+	      python-django		\
+	      python-pytz		\
+	      python-setuptools		\
+	      libtasn1			\
+	      libmcrypt			\
+	      libpcap			\
+	      libdrm			\
+	      php			\
+	      valgrind			\
+	      gzip			\
 	      "
 
 export IMAGE_BASENAME = "core-image-qte-sdk"
