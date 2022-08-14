@@ -157,6 +157,8 @@ IMAGE_INSTALL += "\
               dbus                      \
 	      mosquitto			\
 	      gsl			\
+	      ntp			\
+	      mdns			\
 	      "
 
 export IMAGE_BASENAME = "core-image-qte-sdk"
