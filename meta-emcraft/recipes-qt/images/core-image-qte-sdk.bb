@@ -181,6 +181,7 @@ IMAGE_INSTALL += "\
 	      php			\
 	      valgrind			\
 	      gzip			\
+	      tcsh			\
 	      "
 
 export IMAGE_BASENAME = "core-image-qte-sdk"
