@@ -54,7 +54,7 @@ UBOOT_S="${WORKDIR}/git"
 UBOOT_GIT_REV ?= "271dc419ee2d7d63ac8a5972f3781997b8e56c12"
 
 # Official Emcraft GitHub repos
-LINUX_GIT_REPO ?= "git://github.com/EmcraftSystems/linux-upstream;nobranch=1;rev=${LINUX_GIT_REV}"
+LINUX_GIT_REPO ?= "git://github.com/EmcraftSystems/linux-upstream;nobranch=1;rev=${LINUX_GIT_REV};protocol=https"
 # LINUX_GIT_REPO ?= "git://ocean/SR/git/A2F/linux-upstream;nobranch=1;protocol=ssh;rev=${LINUX_GIT_REV}"
 LINUX_GIT_REV ?= "75b54af873bdf0f5a4ca3aead527b19653eddb00"
 LINUX_S="${WORKDIR}/git"
@@ -72,7 +72,7 @@ CLEAN-VERSION = "vf6-2.2.2"
 #
 # The default is a downloads directory under TOPDIR which is the build directory.
 #
-DL_DIR ?= "/work/tmp/downloads/"
+# DL_DIR ?= "/work/tmp/downloads/"
 #
 # Where to place shared-state files
 #
@@ -240,3 +240,13 @@ PREFERRED_VERSION_linux-libc-headers="4.9.88"
 PREFERRED_VERSION_nativesdk-linux-libc-headers="4.9.88"
 
 SRC_URI_pn-mesa = "https://people.freedesktop.org/~brianp/mesa/older-versions/11.x/${PV}/mesa-${PV}.tar.xz"
+
+SRC_URI_pn-wt = "git://github.com/emweb/wt.git;protocol=https;branch=master"
+DEPENDS_pn-wt += "mariadb"
+
+SRC_URI_pn-python-django = " \
+    git://github.com/django/django.git;branch=stable/1.11.x;protocol=https \
+    "
+
+# remove temporary build images and sources
+INHERIT += "rm_work"

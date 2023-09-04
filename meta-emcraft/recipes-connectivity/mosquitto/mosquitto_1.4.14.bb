@@ -11,7 +11,6 @@ LIC_FILES_CHKSUM = "file://LICENSE.txt;md5=62ddc846179e908dc0c8efec4a42ef20 \
 
 SRC_URI = "http://mosquitto.org/files/source/mosquitto-${PV}.tar.gz \
            file://0001-config.mk-allow-prefix-mandir-localedir-from-environ.patch \
-           file://0002-uthash-remove-in-tree-version.patch \
            file://mosquitto.service \
            file://mosquitto.init \
 "
